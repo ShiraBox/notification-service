@@ -13,21 +13,14 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
-
-    // Ktor dependencies
-    val ktorVersion = "2.3.5"
-
-    implementation ("io.ktor:ktor-client-core:$ktorVersion")
-    implementation ("io.ktor:ktor-client-okhttp:$ktorVersion")
-    implementation ("io.ktor:ktor-client-websockets:$ktorVersion")
-    implementation ("io.ktor:ktor-client-cio:$ktorVersion")
-    implementation ("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
     // Logging
     implementation ("org.slf4j:slf4j-api:2.0.9")
     implementation ("org.slf4j:slf4j-simple:2.0.9")
 
     // Network
+    implementation ("org.java-websocket:Java-WebSocket:1.5.4")
     implementation ("com.google.firebase:firebase-admin:9.2.0")
     implementation ("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
     implementation ("com.github.kittinunf.fuel:fuel:3.0.0-alpha1")
