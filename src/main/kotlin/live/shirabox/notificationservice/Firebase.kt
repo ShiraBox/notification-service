@@ -11,10 +11,10 @@ import kotlin.system.exitProcess
 
 object Firebase {
     private val logger = LoggerFactory.getLogger("Firebase")
+    private val buffer = mutableMapOf<AppNotification, Long>()
+    private const val NOTIFICATION_TTL = 900000L
 
     fun sendNotification(appNotification: AppNotification) {
-        logger.info("Sending notification with topic \"${appNotification.topic}\"...")
-
         val message = Message.builder()
             .setNotification(
                 Notification.builder()
@@ -25,8 +25,20 @@ object Firebase {
             .setTopic(appNotification.topic)
             .build()
 
-        val response = FirebaseMessaging.getInstance().send(message)
-        logger.info("(${appNotification.topic}) Successfully sent message: $response")
+        /**
+         * Avoid sending same notifications twice
+         */
+
+        val expirationTime = buffer[appNotification]
+        expirationTime?.let {
+            if(it <= System.currentTimeMillis()) {
+                send(message, appNotification.topic)
+                buffer[appNotification] = System.currentTimeMillis().plus(NOTIFICATION_TTL)
+            }
+        } ?: {
+            buffer[appNotification] = System.currentTimeMillis()
+            send(message, appNotification.topic)
+        }
     }
 
     fun authenticate(key: String) {
@@ -41,5 +53,10 @@ object Firebase {
             logger.error("Failed to authenticate with environment key: \n${ex.localizedMessage}")
             exitProcess(1)
         }
+    }
+
+    private fun send(message: Message, topic: String) {
+        val response = FirebaseMessaging.getInstance().send(message)
+        logger.info("($topic) Successfully sent message: $response")
     }
 }
