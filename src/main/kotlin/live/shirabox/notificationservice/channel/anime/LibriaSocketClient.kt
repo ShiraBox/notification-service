@@ -10,6 +10,7 @@ import java.net.URI
 class LibriaSocketClient(
     uri: URI,
     val onConnect: (LibriaSocketClient) -> Unit,
+    val onDisconnect: (LibriaSocketClient) -> Unit,
     val onReceive: (String?) -> Unit
 ) : WebSocketClient(uri) {
     private val logger: Logger = LoggerFactory.getLogger("LibriaSocketClient")
@@ -27,7 +28,7 @@ class LibriaSocketClient(
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
         logger.warn("Connection closed" +
                 "${if(remote) " by remote" else ""} with code $code ${reason?.let{" by reason: $reason"}}")
-
+        onDisconnect(this)
     }
 
     override fun onError(ex: Exception?) {
