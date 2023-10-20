@@ -9,6 +9,7 @@ import java.net.URI
 
 class LibriaSocketClient(
     uri: URI,
+    private val reconnect: Boolean,
     val onConnect: (LibriaSocketClient) -> Unit,
     val onReceive: (String?) -> Unit
 ) : WebSocketClient(uri) {
@@ -28,6 +29,7 @@ class LibriaSocketClient(
         logger.warn("Connection closed" +
                 "${if(remote) " by remote" else ""} with code $code ${reason?.let{" by reason: $reason"}}")
 
+        if(reconnect) this.reconnect()
     }
 
     override fun onError(ex: Exception?) {

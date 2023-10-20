@@ -16,11 +16,12 @@ class LibriaChannel : Channel("Libria") {
     override suspend fun listen() {
         val client = LibriaSocketClient(
             uri = URI("ws://$_apiHost/v3/ws/"),
+            reconnect = true,
             onConnect = {
                 // Subscribe only on encoding finish messages
                 it.send(json.encodeToString(
                     Subscribe(
-                        subscribe = SubscriptionType("encode_end")
+                        subscribe = SubscriptionType("encode_finish")
                     )
                 ))
             },
