@@ -12,19 +12,22 @@ import kotlin.system.exitProcess
 object Firebase {
     private val logger = LoggerFactory.getLogger("Firebase")
 
-    fun sendNotification(appNotification: AppNotification) {
+    fun sendNotification(notification: AppNotification) {
         val message = Message.builder()
             .setNotification(
                 Notification.builder()
-                    .setTitle(appNotification.title)
-                    .setBody(appNotification.text)
+                    .setTitle(notification.title)
+                    .setBody(notification.text)
                     .build()
             )
-            .setTopic(appNotification.topic)
+            .setTopic(notification.topic)
+            .putAllData(
+                notification.data
+            )
             .build()
 
         val response = FirebaseMessaging.getInstance().send(message)
-        logger.info("(${appNotification.topic}) Successfully sent message: $response")
+        logger.info("(${notification.topic}) Successfully sent message: $response")
     }
 
     fun authenticate(key: String) {

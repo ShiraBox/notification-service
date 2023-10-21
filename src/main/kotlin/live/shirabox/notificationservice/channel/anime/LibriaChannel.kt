@@ -48,7 +48,10 @@ class LibriaChannel : Channel("Libria") {
                                     AppNotification(
                                         topic = "anilibria_${names.first}",
                                         title = names.second,
-                                        text = "Вышел ${encodeFinishData.data.episode} эпизод в озвучке AniLibria!"
+                                        text = "Вышел ${encodeFinishData.data.episode} эпизод в озвучке AniLibria!",
+                                        data = mapOf(
+                                            "code" to names.first
+                                        )
                                     )
                                 )
 
