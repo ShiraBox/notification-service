@@ -3,6 +3,7 @@ package live.shirabox.notificationservice.channel.anime
 import fuel.httpGet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
@@ -31,17 +32,22 @@ class LibriaChannel : Channel("Libria") {
                 onDisconnect = {
                     launch(Dispatchers.IO) { it.reconnect() }
                 },
-                onReceive = {
-                    it?.let {
+                onReceive = { response ->
+                    response?.let { str ->
                         try {
-                            val subscriptionResponse = json.decodeFromString<SubscriptionResponse>(it)
+                            val subscriptionResponse = json.decodeFromString<SubscriptionResponse>(str)
 
                             logger.info("Subscription response: ${subscriptionResponse.subscribe}")
                         } catch (_: Exception) { /* Ignore other types of messages */ }
 
                         try {
-                            val encodeFinishData = json.decodeFromString<RootWrapper<EncodeFinishData>>(it)
-                            val names = runBlocking { namesFromId(encodeFinishData.data.id) }
+                            val encodeFinishData = json.decodeFromString<RootWrapper<EncodeFinishData>>(str)
+                            val names = runBlocking {
+                                namesFromId(encodeFinishData.data.id).catch {
+                                    it.printStackTrace()
+                                    emitAll(emptyFlow())
+                                }.firstOrNull()
+                            }
 
                             names?.let {
                                 this@LibriaChannel.notifyObservers(  // Fire registered observers
@@ -66,18 +72,22 @@ class LibriaChannel : Channel("Libria") {
         }
     }
 
-    private suspend fun namesFromId(id: Int): Pair<String, String>? {
-        val response = "https://$_apiHost/v3/title".httpGet(
-            listOf("id" to "$id")
-        ).also {
-            if (it.statusCode != 200) {
-                logger.error("(${it.statusCode}): Failed to fetch title data with id $id")
-                return null
+    private suspend fun namesFromId(id: Int): Flow<Pair<String, String>> = flow {
+        try {
+            val response = "https://$_apiHost/v3/title".httpGet(
+                listOf("id" to "$id")
+            ).also {
+                if (it.statusCode != 200) {
+                    logger.error("(${it.statusCode}): Failed to fetch title data with id $id")
+                    emitAll(emptyFlow())
+                }
             }
+
+            val data = json.decodeFromString<LibriaAnimeData>(response.body)
+
+            emit(Util.encodeString(data.names.en) to data.names.ru)
+        } catch (ex: Exception) {
+            throw ex
         }
-
-        val data = json.decodeFromString<LibriaAnimeData>(response.body)
-
-        return Util.encodeString(data.names.en) to data.names.ru
     }
 }
